@@ -1,6 +1,7 @@
-import streamlit as st
+from ultralytics import solutions
 
-st.title("🎈 My new app")
-st.write(
-    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
+inf = solutions.Inference(
+    model="best.pt",  # you can use any model that Ultralytics support, i.e. YOLO11, YOLOv10
 )
+
+inf.inference()  # this will run the inference on the image
