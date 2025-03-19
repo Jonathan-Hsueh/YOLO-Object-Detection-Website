@@ -1,1 +1,10 @@
 streamlit
+streamlit-webrtc
+opencv-python-headless
+ultralytics
+torch
+Pillow
+numpy
+python-multipart
+aiortc
+av
