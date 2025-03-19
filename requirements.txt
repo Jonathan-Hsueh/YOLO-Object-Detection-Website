@@ -5,6 +5,5 @@ ultralytics
 torch
 Pillow
 numpy
-python-multipart
 aiortc
 av
