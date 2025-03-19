@@ -74,7 +74,7 @@ if video_source == "webcam":
             fps = 1 / (current_time - prev_time)
             prev_time = current_time
             
-            fps_text.markdown(f"**FPS: {fps:.2f}**")
+            st.session_state["fps"] = fps
             
             # Display the annotated frame
             stframe.image(frame_rgb, channels="RGB", use_container_width=True)
@@ -86,9 +86,6 @@ if video_source == "webcam":
             if not st.session_state["webcam_running"]:
                 cap.release()
                 break
-
-
-        
 
 elif video_source == "Upload File":
     uploaded_file = st.sidebar.file_uploader("Upload Video", type=["png", "jpg", "mp4", "avi", "mov"])

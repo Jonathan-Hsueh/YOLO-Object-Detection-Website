@@ -60,6 +60,7 @@ if video_source == "Webcam":
         fps = 1 / (current_time - prev_time)
         prev_time = current_time
         st.sidebar.markdown(f"**FPS: {fps:.2f}**")
+        print(f"FPS: {fps:.2f}")
 
         # Latency Calculation
         latency = (time.time() - start_time) * 1000  # Convert to ms
