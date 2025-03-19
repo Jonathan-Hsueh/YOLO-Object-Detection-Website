@@ -1,4 +1,11 @@
 streamlit
-streamlit_webrtc
+streamlit-webrtc
 opencv-python-headless
 ultralytics
+torch
+Pillow
+numpy
+python-multipart
+aiortc
+av
+cv2
