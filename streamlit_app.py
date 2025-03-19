@@ -114,8 +114,5 @@ elif video_source == "Upload File":
         else:
             st.video(uploaded_file)
             stframe = st.empty()
-            
-            
-        
 
 st.success("Model loaded successfully!")
