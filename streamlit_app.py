@@ -3,6 +3,7 @@ import cv2
 import torch
 import time
 import av
+import tempfile
 from ultralytics import YOLO
 from PIL import Image
 import numpy as np
@@ -92,7 +93,8 @@ if video_source == "Webcam":
 elif video_source == "Upload File":
     uploaded_file = st.sidebar.file_uploader("Upload Video", type=["png", "jpg", "mp4", "avi", "mov"])
     start = st.sidebar.button("Start")
-
+    stop = st.sidebar.button("Stop")
+    
     if uploaded_file is not None:
         st.sidebar.success("File Uploaded Successfully")
 
@@ -113,5 +115,73 @@ elif video_source == "Upload File":
                 stframe.image(frame_rgb, channels="RGB", use_container_width=True)
         else:
             st.video(uploaded_file)
+            
+            if uploaded_file is not None:
+                
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
+                    tmpfile.write(uploaded_file.read())
+                    temp_file_path = tmpfile.name
+                    
+                st.sidebar.success("File Uploaded Successfully")
+                
+                cap = cv2.VideoCapture(temp_file_path)
+                
+                if not cap.isOpened():
+                    st.error("Error opening cap file")
+                else:
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    output_path = tempfile.mktemp(suffix='.mp4')
+                    out = cv2.VideoWriter(output_path, fourcc, 30, (int(cap.get(3)), int(cap.get(4))))
+                    
+                    frame_count = 0
+                    prev_time = time.time()
+                    
+                    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    processed_frames = 0
+                    
+                    fps_latency_area = st.sidebar.empty()
+                    
+                    progress_bar = st.progress(0)
+                    
+                    while cap.isOpened():
+                        ret, frame = cap.read()
+                        if not ret: 
+                            break
+                        
+                        start_time = time.time()
+                        
+                        results = model(frame, conf=confidence_threshold, iou=iou_threshold)
+
+                        for r in results:
+                            annotated_frame = r.plot()
+                        
+                        frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+
+                        out.write(frame_rgb)
+
+                        current_time = time.time()
+                        fps = 1 / (current_time - prev_time)
+                        prev_time = current_time
+                        frame_count += 1
+
+                        # Log FPS and latency
+                        latency = (time.time() - start_time) * 1000  # Convert to ms
+                        fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
+                        processed_frames += 1
+                        progress_bar.progress(processed_frames / total_frames)
+
+                        
+                    cap.release()
+                    out.release()
+                
+                with open(output_path, "rb") as f:
+                    st.download_button(
+                        label="Download Processed Video",
+                        data=f,
+                        file_name="processed_video.mp4",
+                        mime="video/mp4"
+                    )
+            
+            os.remove(temp_file_path)
 
 st.success("Model loaded successfully!")
