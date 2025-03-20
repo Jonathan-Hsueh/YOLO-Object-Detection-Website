@@ -17,7 +17,7 @@ st.markdown("<h3 style='text-align: center; color: blue;'>Experience real-time s
 
 # Sidebar controls
 st.sidebar.title("Video")
-video_source = st.sidebar.selectbox("Select Input Source", ["Webcam", "Upload File"])
+video_source = st.sidebar.selectbox("Select Input Source", ["Webcam", "Upload File", "RTMP Stream"])
 
 st.sidebar.title("Enable Tracking")
 enable_tracking = st.sidebar.radio("Enable Tracking", ["Yes", "No"])
@@ -183,5 +183,71 @@ elif video_source == "Upload File":
                     )
             
             os.remove(temp_file_path)
+            
+elif video_source == "RTMP Stream":
+    rtmp_url = st.sidebar.text_input("Enter RTMP URL", value="")
+    start = st.sidebar.button("Start")
+    stop = st.sidebar.button("Stop")
+
+    if "streaming" not in st.session_state:
+        st.session_state.streaming = False
+
+    if start:
+        st.session_state.streaming = True  # Start streaming
+
+    if stop:
+        st.session_state.streaming = False  # Stop streaming
+
+    if st.session_state.streaming and rtmp_url:
+        cap = cv2.VideoCapture(rtmp_url)
+
+        if not cap.isOpened():
+            st.error("Error opening RTMP stream. Check the URL.")
+        else:
+            frame_count = 0
+            prev_time = time.time()
+            fps_latency_area = st.sidebar.empty()
+            stframe = st.empty()
+
+            while st.session_state.streaming:
+                ret, frame = cap.read()
+                if not ret:
+                    st.error("Stream ended or could not be read.")
+                    break
+
+                start_time = time.time()
+
+                # Run YOLO model
+                results = model(frame, conf=confidence_threshold, iou=iou_threshold)
+
+                for r in results:
+                    annotated_frame = r.plot()
+                        
+                frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+
+                # FPS Calculation
+                current_time = time.time()
+                elapsed_time = current_time - prev_time
+                fps = 1 / elapsed_time if elapsed_time > 0 else 0
+                prev_time = current_time
+                frame_count += 1
+
+                # Display FPS and Latency
+                latency = (time.time() - start_time) * 1000  # Convert to ms
+                fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
+
+                # Show frame
+                stframe.image(frame_rgb, channels="RGB", use_container_width=True)
+
+                # Stop check
+                if not st.session_state.streaming:
+                    break  # Exit loop when Stop is clicked
+
+            cap.release()
+            st.success("Streaming stopped successfully.")
+        
+                    
+        
+    
 
 st.success("Model loaded successfully!")
