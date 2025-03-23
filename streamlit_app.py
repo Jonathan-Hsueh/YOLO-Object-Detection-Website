@@ -12,8 +12,8 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode
 # Streamlit UI Configuration
 st.set_page_config(page_title="Gods' Eye Object Detection", layout="wide")
 
-st.markdown("<h1 style='text-align: center; color: #ff66b2;'>Ultralytics YOLO Streamlit Application</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: blue;'>Experience real-time security detection with the power of Ultralytics YOLO! 🚀</h3>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: white;'>Gods' Eye Security Detection</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: gray;'>Experience real-time security detection with the power of Ultralytics YOLO! 🚀</h3>", unsafe_allow_html=True)
 
 # Sidebar controls
 st.sidebar.title("Video")
@@ -42,7 +42,7 @@ if video_source == "Webcam":
 
     # FPS tracking
     prev_time = time.time()
-    fps_latency_area = st.sidebar.empty()
+
     # Video Processing Callback
     def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
         global prev_time
@@ -60,18 +60,17 @@ if video_source == "Webcam":
         current_time = time.time()
         fps = 1 / (current_time - prev_time)
         prev_time = current_time
-        # st.sidebar.markdown(f"**FPS: {fps:.2f}**")
+        st.sidebar.markdown(f"**FPS: {fps:.2f}**")
         print(f"FPS: {fps:.2f}")
 
         # Latency Calculation
         latency = (time.time() - start_time) * 1000  # Convert to ms
         print(f"Latency per frame: {latency:.2f} ms")
-        fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
 
         return av.VideoFrame.from_ndarray(annotated_frame, format="bgr24")
 
     # UI for Start/Stop Buttons
-    st.title("🔍 Real-time YOLO Object Detection with WebRTC")
+    st.title("🔍 Real-time YOLO Object Detection with WebRTC, powered by Streamlit")
 
     col1, col2 = st.sidebar.columns(2)
     if col1.button("Start"):
@@ -123,7 +122,7 @@ elif video_source == "Upload File":
             st.video(uploaded_file)
             
             if uploaded_file is not None:
-                if "video" not in st.session_state:
+                if "streaming" not in st.session_state:
                     st.session_state.streaming = False
                     
                 if start:
