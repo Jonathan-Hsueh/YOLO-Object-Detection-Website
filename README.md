@@ -46,6 +46,10 @@ Image detection inputting. Custom Latency Bar for data.
 
 Video detection with FPS counter, Latency, Frames, and Progress bar. Supports mp4, MOV, AVI. 
 
+<img width="1478" alt="Screenshot 2025-03-22 at 10 37 48 PM" src="https://github.com/user-attachments/assets/d77f4836-7de1-48c2-9c77-27989460057f" />
+
+Webcam Detection that works with any compatible device. Working on an FPS Counter but usually runs around 5-10 FPS on the cloud and 15-20 FPS locally. 
+
 <img width="1493" alt="Screenshot 2025-03-22 at 10 36 48 PM" src="https://github.com/user-attachments/assets/1a694ad0-ec3a-4701-b695-7c8e952333cb" />
 
 RTMP Video Streaming inputting, great for projecting RTMP security streams through the AI model. 
