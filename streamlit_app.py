@@ -42,7 +42,7 @@ if video_source == "Webcam":
 
     # FPS tracking
     prev_time = time.time()
-
+    fps_latency_area = st.sidebar.empty()
     # Video Processing Callback
     def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
         global prev_time
@@ -60,12 +60,13 @@ if video_source == "Webcam":
         current_time = time.time()
         fps = 1 / (current_time - prev_time)
         prev_time = current_time
-        st.sidebar.markdown(f"**FPS: {fps:.2f}**")
+        # st.sidebar.markdown(f"**FPS: {fps:.2f}**")
         print(f"FPS: {fps:.2f}")
 
         # Latency Calculation
         latency = (time.time() - start_time) * 1000  # Convert to ms
         print(f"Latency per frame: {latency:.2f} ms")
+        fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
 
         return av.VideoFrame.from_ndarray(annotated_frame, format="bgr24")
 
@@ -102,87 +103,101 @@ elif video_source == "Upload File":
             stframe = st.empty()
             image = Image.open(uploaded_file)
             st.image(image, caption="Uploaded Image", use_container_width=True)
-
+            fps_latency_area = st.sidebar.empty()
             # Run YOLO inference on the image
             if start:
                 image_array = np.array(image)  # Convert to NumPy array
+                start_time = time.time()
                 results = model(image_array, conf=confidence_threshold, iou=iou_threshold)
 
                 for r in results:
                     annotated_frame = r.plot()
-
+                
                 frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
                 stframe.image(frame_rgb, channels="RGB", use_container_width=True)
+                current_time = time.time()
+                latency = (time.time() - start_time) * 1000 
+                fps_latency_area.markdown(f"**Latency: {latency:.2f} ms**")
+
         else:
             st.video(uploaded_file)
             
             if uploaded_file is not None:
+                if "video" not in st.session_state:
+                    st.session_state.streaming = False
+                    
+                if start:
+                    st.session_state.streaming = True  # Start streaming
+
+                if stop:
+                    st.session_state.streaming = False
                 
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
-                    tmpfile.write(uploaded_file.read())
-                    temp_file_path = tmpfile.name
+                if st.session_state.streaming:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
+                        tmpfile.write(uploaded_file.read())
+                        temp_file_path = tmpfile.name
+                        
+                    st.sidebar.success("File Uploaded Successfully")
                     
-                st.sidebar.success("File Uploaded Successfully")
+                    cap = cv2.VideoCapture(temp_file_path)
+                    
+                    if not cap.isOpened():
+                        st.error("Error opening cap file")
+                    else:
+                        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                        output_path = tempfile.mktemp(suffix='.mp4')
+                        out = cv2.VideoWriter(output_path, fourcc, 30, (int(cap.get(3)), int(cap.get(4))))
+                        
+                        frame_count = 0
+                        prev_time = time.time()
+                        
+                        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                        processed_frames = 0
+                        
+                        fps_latency_area = st.sidebar.empty()
+                        
+                        progress_bar = st.progress(0)
+                        
+                        while cap.isOpened():
+                            ret, frame = cap.read()
+                            if not ret: 
+                                break
+                            
+                            start_time = time.time()
+                            
+                            results = model(frame, conf=confidence_threshold, iou=iou_threshold)
+
+                            for r in results:
+                                annotated_frame = r.plot()
+                            
+                            frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+
+                            out.write(frame_rgb)
+
+                            current_time = time.time()
+                            fps = 1 / (current_time - prev_time)
+                            prev_time = current_time
+                            frame_count += 1
+
+                            # Log FPS and latency
+                            latency = (time.time() - start_time) * 1000  # Convert to ms
+                            fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
+                            processed_frames += 1
+                            progress_bar.progress(processed_frames / total_frames)
+
+                            
+                        cap.release()
+                        out.release()
                 
-                cap = cv2.VideoCapture(temp_file_path)
-                
-                if not cap.isOpened():
-                    st.error("Error opening cap file")
-                else:
-                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                    output_path = tempfile.mktemp(suffix='.mp4')
-                    out = cv2.VideoWriter(output_path, fourcc, 30, (int(cap.get(3)), int(cap.get(4))))
-                    
-                    frame_count = 0
-                    prev_time = time.time()
-                    
-                    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    processed_frames = 0
-                    
-                    fps_latency_area = st.sidebar.empty()
-                    
-                    progress_bar = st.progress(0)
-                    
-                    while cap.isOpened():
-                        ret, frame = cap.read()
-                        if not ret: 
-                            break
-                        
-                        start_time = time.time()
-                        
-                        results = model(frame, conf=confidence_threshold, iou=iou_threshold)
-
-                        for r in results:
-                            annotated_frame = r.plot()
-                        
-                        frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
-
-                        out.write(frame_rgb)
-
-                        current_time = time.time()
-                        fps = 1 / (current_time - prev_time)
-                        prev_time = current_time
-                        frame_count += 1
-
-                        # Log FPS and latency
-                        latency = (time.time() - start_time) * 1000  # Convert to ms
-                        fps_latency_area.markdown(f"**FPS: {fps:.2f} | Latency: {latency:.2f} ms | Frames Processed: {frame_count}**")
-                        processed_frames += 1
-                        progress_bar.progress(processed_frames / total_frames)
-
-                        
-                    cap.release()
-                    out.release()
-                
-                with open(output_path, "rb") as f:
-                    st.download_button(
-                        label="Download Processed Video",
-                        data=f,
-                        file_name="processed_video.mp4",
-                        mime="video/mp4"
-                    )
+                    with open(output_path, "rb") as f:
+                        st.download_button(
+                            label="Download Processed Video",
+                            data=f,
+                            file_name="processed_video.mp4",
+                            mime="video/mp4"
+                        )
             
-            os.remove(temp_file_path)
+                    os.remove(temp_file_path)
             
 elif video_source == "RTMP Stream":
     rtmp_url = st.sidebar.text_input("Enter RTMP URL", value="")
