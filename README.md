@@ -11,7 +11,7 @@ We maintain a public server running through Streamlit, yet due to bandwidth conc
 1. Clone the repository
 
    ```
-   $ git clone <repositoryclonesshkey>
+   $ git clone <repositoryclonehttpskey>
    ```
 
 2. Switch to the 'finalfunctions' branch
