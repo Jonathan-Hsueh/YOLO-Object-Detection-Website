@@ -1,4 +1,4 @@
-# 🎈 Gods Eye Object Detection
+# 🎈 YOLO Object Detection
 
 A simple Security Detection app template for you to modify and use! We have color palettes to prevent eye strain, as well as useful metrics to track detections
 
